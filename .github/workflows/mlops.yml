@@ -1,0 +1,71 @@
+name: MLOPS CI CD Pipeline
+
+on:
+    push:
+        branches:
+            - main
+    pull_request:
+        branches:
+            - main
+
+jobs:
+    build-test-train:
+        runs-on: ubuntu-latest
+
+        steps:
+            # Step 1 Checkout source code
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            # Step 2 Set up Python environment
+            - name: Set up Python
+              uses: actions/setup-python@v5
+
+              with: 
+                python-version: '3.10'
+
+            # Step 3 Install Dependencies
+            - name: Install dependencies
+              run: |
+                python -m pip install --upgrade pip
+                pip install -r requirments.txt
+
+            # Step 4 Run Unit Tests
+            - name: Run unit tests
+              run: pytest -v
+            
+            # Step 5 Train Model
+            - name: Train model
+              run: python src/train.py
+
+            # Step 6 Evaluate Model
+            - name: Evaluate model
+              run: python src/evaluate.py
+
+            # Step 7 Upload The Train Model As Artifact
+            - name: Upload model artifact
+              uses: actions/upload-artifact@v4
+
+              with:
+                name: trained-model
+                path: models/model.pkl
+            
+
+    deploy:
+        needs: build-test-train
+        runs-on: ubuntu-latest
+
+        steps:
+            # Step 8 Download The Trained Model
+            - name: Download model artifact
+              uses: actions/download-artifact@v4
+
+              with:
+                name: trained-model
+                path: models
+
+            # Step 9 Deployment Simulations
+            - name: Deployment simulation
+              run: |
+                echo "Model deployed successfully!"
+                ls -l models
